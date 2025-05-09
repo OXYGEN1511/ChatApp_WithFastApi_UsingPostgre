@@ -1,5 +1,9 @@
-fastapi
-redis
-types-redis
-uvicorn
-psycopg2-binary>=2.9.6
+fastapi==0.109.1
+uvicorn==0.27.0
+python-socketio==5.11.2
+python-engineio==4.8.0
+psycopg2-binary==2.9.9
+python-multipart==0.0.6
+python-dotenv==1.0.0
+aiofiles==23.2.1
+Jinja2==3.1.3
