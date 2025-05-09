@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Users</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f7f7f7; 
+            padding: 20px; 
+            margin: 0;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: auto; 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            position: relative;
+        }
+        .search-container {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        input { 
+            width: 100%; 
+            padding: 10px; 
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            box-sizing: border-box;
+        }
+        .user-list {
+            overflow-y: auto;
+            max-height: 70vh;
+        }
+        .user-item {
+            display: flex;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .user-item:hover {
+            background: #f5f5f5;
+        }
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #4CAF50;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .user-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .user-last-message {
+            color: #666;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .user-time {
+            font-size: 12px;
+            color: #999;
+        }
+        .unread-count {
+            background: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .current-user {
+            font-size: 14px;
+            color: white;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Chats</h2>
+            <div class="current-user">Logged in as: <span id="current-user"></span></div>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search contacts..." onkeyup="searchUsers()">
+        </div>
+        
+        <div class="user-list" id="user-list">
+            <!-- Chats -->
+        </div>
+    </div>
+    
+    <script>
+        async function getCurrentUser() {
+            const res = await fetch('/get-current-user');
+            const data = await res.json();
+            document.getElementById("current-user").textContent = data.user;
+            return data.user;
+        }
+        
+        async function loadUserChats() {
+            const currentUser = await getCurrentUser();
+            try {
+                const res = await fetch('/get-user-chats');
+                const data = await res.json();
+                const userListDiv = document.getElementById("user-list");
+                userListDiv.innerHTML = "";
+
+                // Sort chats by last_message timestamp (newest first)
+                const sortedChats = data.chats.sort((a, b) => 
+                    (b.last_message?.timestamp || 0) - (a.last_message?.timestamp || 0)
+                );
+
+                if (sortedChats.length === 0) {
+                    userListDiv.innerHTML = "<div style='padding: 20px; text-align: center; color: #666;'>No chats yet</div>";
+                    return;
+                }
+
+                sortedChats.forEach(chat => {
+                    const otherUser = chat.user1 === currentUser ? chat.user2 : chat.user1;
+                    const lastMessage = chat.last_message || { text: "No messages yet", timestamp: 0 };
+                    const unreadCount = chat.unread_count || 0;
+
+                    const userDiv = document.createElement("div");
+                    userDiv.className = "user-item";
+                    userDiv.onclick = () => window.location.href = `/chat?to=${otherUser}`;
+
+                    userDiv.innerHTML = `
+                        <div class="user-avatar">${otherUser.charAt(0)}</div>
+                        <div class="user-details">
+                            <div class="user-name">
+                                <span>${otherUser}</span>
+                                <span class="user-time">${formatTime(lastMessage.timestamp)}</span>
+                            </div>
+                            <div class="user-last-message">
+                                ${lastMessage.sender === currentUser ? 'You: ' : ''}
+                                ${truncateMessage(lastMessage.text)}
+                                ${unreadCount > 0 ? `<span class="unread-count">${unreadCount}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    userListDiv.appendChild(userDiv);
+                });
+            } catch (error) {
+                console.error("Error loading chats:", error);
+                userListDiv.innerHTML = "<div style='padding: 20px; text-align: center; color: red;'>Error loading chats</div>";
+            }
+        }
+        
+        async function searchUsers() {
+            const query = document.getElementById("search").value;
+            if (query.length < 1) {
+                loadUserChats();
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/search-users?query=${encodeURIComponent(query)}`);
+                if (!res.ok) {
+                    throw new Error(await res.text());
+                }
+                const data = await res.json();
+                const userListDiv = document.getElementById("user-list");
+                userListDiv.innerHTML = "";
+                
+                if (data.users.length === 0) {
+                    userListDiv.innerHTML = "<div style='padding: 20px; text-align: center; color: #666;'>No users found</div>";
+                    return;
+                }
+                
+                data.users.forEach(user => {
+                    const userDiv = document.createElement("div");
+                    userDiv.className = "user-item";
+                    userDiv.onclick = () => {
+                        window.location.href = `/chat?to=${user.mobile}`;
+                    };
+                    
+                    userDiv.innerHTML = `
+                        <div class="user-avatar">${user.mobile.charAt(0)}</div>
+                        <div class="user-details">
+                            <div class="user-name">
+                                <span>${user.mobile}</span>
+                            </div>
+                            <div class="user-last-message">
+                                Click to start chat
+                            </div>
+                        </div>
+                    `;
+                    
+                    userListDiv.appendChild(userDiv);
+                });
+            } catch (error) {
+                console.error("Search error:", error);
+                userListDiv.innerHTML = "<div style='padding: 20px; text-align: center; color: red;'>Error searching users</div>";
+            }
+        }
+        
+        function formatTime(timestamp) {
+            if (!timestamp || timestamp === 0) return '';
+            
+            const now = Math.floor(Date.now() / 1000);
+            const diff = now - timestamp;
+            const date = new Date(timestamp * 1000);
+            
+            if (diff < 86400) {
+                return date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            } else if (diff < 604800) {
+                return date.toLocaleDateString([], {weekday: 'short'});
+            } else {
+                return date.toLocaleDateString([], {month: 'short', day: 'numeric'});
+            }
+        }
+        
+        function truncateMessage(text, maxLength = 30) {
+            if (!text) return '';
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        }
+        
+        
+        loadUserChats();
+        
+        
+        setInterval(loadUserChats, 10000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login / Register with OTP</title>
+    <meta http-equiv="x-dns-prefetch-control" content="off">
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+            background: #f2f2f2;
+        }
+        .container {
+            max-width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .otp-section {
+            display: none;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+        .success-message {
+            color: green;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Login / Register</h2>
+        <div id="mobile-section">
+            <label for="mobile">Enter Mobile Number:</label>
+            <input type="text" id="mobile" placeholder="e.g. 9876543210" required>
+            <button type="button" id="send-otp-btn" onclick="sendOTP()">Send OTP</button>
+        </div>
+        <div class="otp-section" id="otp-section">
+            <label for="otp">Enter OTP:</label>
+            <input type="text" id="otp" placeholder="Enter OTP">
+            <button type="button" id="verify-otp-btn" onclick="verifyOTP()">Verify & Login</button>
+        </div>
+        <div id="success-message" class="success-message"></div>
+        <div id="error-message" class="error-message"></div>
+        <div id="loading" class="loading">
+            Processing, please wait...
+        </div>
+    </div>
+    <script>
+        const API_BASE_URL = window.location.origin;
+        
+        async function sendOTP() {
+            const mobile = document.getElementById("mobile").value;
+            if (!mobile) {
+                showError("Please enter mobile number");
+                return;
+            }
+            
+            // Show loading and disable button
+            showLoading(true);
+            document.getElementById("send-otp-btn").disabled = true;
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/login-or-register`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: `mobile=${encodeURIComponent(mobile)}`
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    showSuccess(data.message || "OTP sent successfully");
+                    document.getElementById("otp-section").style.display = "block";
+                } else {
+                    showError(data.detail || "Failed to send OTP");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                showError("Failed to connect to server. Please check your internet connection or try again later.");
+            } finally {
+                // Hide loading and enable button
+                showLoading(false);
+                document.getElementById("send-otp-btn").disabled = false;
+            }
+        }
+        
+        async function verifyOTP() {
+            const mobile = document.getElementById("mobile").value;
+            const otp = document.getElementById("otp").value;
+            if (!otp) {
+                showError("Please enter OTP");
+                return;
+            }
+            
+            // Show loading and disable button
+            showLoading(true);
+            document.getElementById("verify-otp-btn").disabled = true;
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/verify-otp`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: `mobile=${encodeURIComponent(mobile)}&otp=${encodeURIComponent(otp)}`
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok && data.message === "OTP verified successfully") {
+                    showSuccess("Login successful! Redirecting...");
+                    setTimeout(() => {
+                        window.location.href = "/search";
+                    }, 1000);
+                } else {
+                    showError(data.detail || "Failed to verify OTP");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                showError("Failed to connect to server. Please check your internet connection or try again later.");
+            } finally {
+                // Hide loading and enable button
+                showLoading(false);
+                document.getElementById("verify-otp-btn").disabled = false;
+            }
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById("error-message");
+            errorElement.textContent = message;
+            document.getElementById("success-message").textContent = "";
+        }
+        
+        function showSuccess(message) {
+            const successElement = document.getElementById("success-message");
+            successElement.textContent = message;
+            document.getElementById("error-message").textContent = "";
+        }
+        
+        function showLoading(show) {
+            document.getElementById("loading").style.display = show ? "block" : "none";
+        }
+    </script>
+</body>
+</html>
