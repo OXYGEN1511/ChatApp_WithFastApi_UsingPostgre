@@ -2,68 +2,196 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login / Register with OTP</title>
-    <meta http-equiv="x-dns-prefetch-control" content="off">
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Chat App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #7367F0;
+            --primary-light: #A5A2F6;
+            --secondary-color: #EA5455;
+            --light-bg: #F8F8F8;
+            --dark-text: #2B2B2B;
+            --light-text: #6E6B7B;
+            --white: #FFFFFF;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
-            padding: 30px;
-            background: #f2f2f2;
-        }
-        .container {
-            max-width: 400px;
-            background: white;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            border-radius: 10px;
-            margin: auto;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        input, button {
+        
+        .login-container {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
+            max-width: 420px;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 32px;
+            text-align: center;
         }
+        
+        .app-logo {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+        
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-text);
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: var(--border-radius);
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(115, 103, 240, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: var(--border-radius);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 8px;
+        }
+        
+        button:hover {
+            background: var(--primary-light);
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
         .otp-section {
             display: none;
+            animation: fadeIn 0.3s ease;
         }
+        
+        .message {
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-top: 16px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
         .error-message {
-            color: red;
-            margin-top: 10px;
+            background: #FFEEEE;
+            color: var(--secondary-color);
+            border: 1px solid #FFCCCC;
         }
+        
         .success-message {
-            color: green;
-            margin-top: 10px;
+            background: #EEFFEE;
+            color: #28a745;
+            border: 1px solid #CCFFCC;
         }
+        
         .loading {
             display: none;
-            text-align: center;
-            margin-top: 10px;
+            margin: 16px 0;
         }
-        button:disabled {
-            background-color: #cccccc;
-            color: #666666;
-            cursor: not-allowed;
+        
+        .loading-spinner {
+            border: 3px solid rgba(115, 103, 240, 0.2);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 24px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Login / Register</h2>
+    <div class="login-container">
+        <div class="app-logo">💬</div>
+        <h1 class="app-title">Chat App</h1>
+        
         <div id="mobile-section">
-            <label for="mobile">Enter Mobile Number:</label>
-            <input type="text" id="mobile" placeholder="e.g. 9876543210" required>
+            <div class="input-group">
+                <label for="mobile">Mobile Number</label>
+                <input type="text" id="mobile" placeholder="Enter your 10-digit mobile number" required>
+            </div>
             <button type="button" id="send-otp-btn" onclick="sendOTP()">Send OTP</button>
         </div>
+        
         <div class="otp-section" id="otp-section">
-            <label for="otp">Enter OTP:</label>
-            <input type="text" id="otp" placeholder="Enter OTP">
-            <button type="button" id="verify-otp-btn" onclick="verifyOTP()">Verify & Login</button>
+            <div class="input-group">
+                <label for="otp">OTP Verification</label>
+                <input type="text" id="otp" placeholder="Enter 6-digit OTP">
+            </div>
+            <button type="button" id="verify-otp-btn" onclick="verifyOTP()">Verify & Continue</button>
         </div>
-        <div id="success-message" class="success-message"></div>
-        <div id="error-message" class="error-message"></div>
+        
+        <div id="success-message" class="message success-message"></div>
+        <div id="error-message" class="message error-message"></div>
+        
         <div id="loading" class="loading">
-            Processing, please wait...
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 8px;">Processing, please wait...</p>
         </div>
     </div>
     <script>
