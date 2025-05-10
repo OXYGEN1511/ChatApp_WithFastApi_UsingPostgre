@@ -150,11 +150,11 @@ async def login_or_register(mobile: str = Form(...)):
             response = JSONResponse({"message": f"OTP sent to {mobile}", "otp": otp})
             response.set_cookie(key="session_id", value=session_id)
             return response
-        except Exception as e:
-        error_msg = f"Database error in login_or_register: {str(e)}"
-        logger.error(error_msg)
-        logger.error(traceback.format_exc())
-        return JSONResponse(
+    except Exception as e:
+            error_msg = f"Database error in login_or_register: {str(e)}"
+            logger.error(error_msg)
+            logger.error(traceback.format_exc())
+            return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": error_msg}
         )
