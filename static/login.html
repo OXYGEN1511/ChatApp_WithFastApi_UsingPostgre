@@ -117,7 +117,7 @@
             border-radius: var(--border-radius);
             margin-top: 16px;
             font-size: 0.9rem;
-            display: none;
+            display: block;
         }
         
         .error-message {
@@ -128,7 +128,7 @@
         
         .success-message {
             background: #EEFFEE;
-            color: #28a745;
+            color:var(--primary-color);
             border: 1px solid #CCFFCC;
         }
         
@@ -147,6 +147,38 @@
             margin: 0 auto;
         }
         
+        .timer-container {
+            margin-top: 16px;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            display: none;
+            border: 2px solid #CCFFCC;
+        }
+        
+        .timer {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .resend-btn {
+            background: blueviolet;
+            border: 2px solid white;
+            color: var(--primary-color);
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 8px;
+            padding: 0;
+            text-decoration: underline;
+            width: auto;
+            display: inline;
+        }
+        
+        .resend-btn:disabled {
+            color: var(--light-text);
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -157,7 +189,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
         
-        /* Responsive adjustments */
+        
         @media (max-width: 480px) {
             .login-container {
                 padding: 24px;
@@ -181,13 +213,19 @@
         <div class="otp-section" id="otp-section">
             <div class="input-group">
                 <label for="otp">OTP Verification</label>
-                <input type="text" id="otp" placeholder="Enter 6-digit OTP">
+                <input type="text" id="otp" placeholder="Enter 4-digit OTP">
             </div>
             <button type="button" id="verify-otp-btn" onclick="verifyOTP()">Verify & Continue</button>
+            
+            <div class="timer-container" id="timer-container">
+                <p>Resend OTP in <span class="timer" id="timer">60</span> seconds</p>
+            </div>
+            <button type="button" class="resend-btn" id="resend-btn" disabled onclick="sendOTP(true)">Resend OTP</button>
+
         </div>
         
-        <div id="success-message" class="message success-message"></div>
-        <div id="error-message" class="message error-message"></div>
+        <div id="success-message" class="message success-message" style="display: none;"></div>
+        <div id="error-message" class="message error-message" style="display: none;"></div>
         
         <div id="loading" class="loading">
             <div class="loading-spinner"></div>
@@ -196,18 +234,27 @@
     </div>
     <script>
         const API_BASE_URL = window.location.origin;
+        let timerInterval;
+        let remainingTime = 60;
         
-        async function sendOTP() {
+        async function sendOTP(isResend = false) {
             const mobile = document.getElementById("mobile").value;
             if (!mobile) {
                 showError("Please enter mobile number");
                 return;
             }
             
-            
+            // Validate mobile number (basic check for 10 digits)
+            if (!/^\d{10}$/.test(mobile)) {
+                showError("Please enter a valid 10-digit mobile number");
+                return;
+            }
             
             showLoading(true);
             document.getElementById("send-otp-btn").disabled = true;
+            if (isResend) {
+                document.getElementById("resend-btn").disabled = true;
+            }
             
             try {
                 const res = await fetch(`${API_BASE_URL}/login-or-register`, {
@@ -218,13 +265,22 @@
                     body: `mobile=${encodeURIComponent(mobile)}`
                 });
                 
-               const data = await res.json();
+                const data = await res.json();
                 
                 if (res.ok) {
                     console.log("Full response:", data);
                     console.log("OTP:", data.otp);
-                    showSuccess(data.message || "OTP sent successfully");
+                    showSuccess(isResend ? "OTP resent successfully" : data.message || "OTP sent successfully");
                     document.getElementById("otp-section").style.display = "block";
+                    document.getElementById("timer-container").style.display = "block";
+                    
+                    // Start the timer
+                    startTimer();
+                    
+                    // If it's the first time sending OTP, disable the mobile input
+                    if (!isResend) {
+                        document.getElementById("mobile").disabled = true;
+                    }
                 } else {
                     showError(data.detail || "Failed to send OTP");
                 }
@@ -232,10 +288,32 @@
                 console.error("Error:", error);
                 showError("Failed to connect to server. Please check your internet connection or try again later.");
             } finally {
-                // Hide loading and enable button
                 showLoading(false);
-                document.getElementById("send-otp-btn").disabled = false;
+                if (!isResend) {
+                    document.getElementById("send-otp-btn").disabled = false;
+                }
             }
+        }
+        
+        function startTimer() {
+            // Reset timer
+            clearInterval(timerInterval);
+            remainingTime = 60;
+            
+            // Update timer display
+            document.getElementById("timer").textContent = remainingTime;
+            document.getElementById("resend-btn").disabled = true;
+            
+            // Start countdown
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                document.getElementById("timer").textContent = remainingTime;
+                
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById("resend-btn").disabled = false;
+                }
+            }, 1000);
         }
         
         async function verifyOTP() {
@@ -246,7 +324,7 @@
                 return;
             }
             
-            // Show loading and disable button
+            
             showLoading(true);
             document.getElementById("verify-otp-btn").disabled = true;
             
@@ -262,38 +340,55 @@
                 const data = await res.json();
                 
                 if (res.ok && data.message === "OTP verified successfully") {
+                    clearInterval(timerInterval); // Stop the timer
                     showSuccess("Login successful! Redirecting...");
                     setTimeout(() => {
                         window.location.href = "/search";
                     }, 1000);
                 } else {
                     showError(data.detail || "Failed to verify OTP");
+                    document.getElementById("verify-otp-btn").disabled = false;
                 }
             } catch (error) {
                 console.error("Error:", error);
                 showError("Failed to connect to server. Please check your internet connection or try again later.");
-            } finally {
-                // Hide loading and enable button
-                showLoading(false);
                 document.getElementById("verify-otp-btn").disabled = false;
+            } finally {
+                // Hide loading
+                showLoading(false);
             }
         }
         
         function showError(message) {
             const errorElement = document.getElementById("error-message");
             errorElement.textContent = message;
-            document.getElementById("success-message").textContent = "";
+            errorElement.style.display = message ? "block" : "none";
+            document.getElementById("success-message").style.display = "none";
         }
         
         function showSuccess(message) {
             const successElement = document.getElementById("success-message");
             successElement.textContent = message;
-            document.getElementById("error-message").textContent = "";
+            successElement.style.display = message ? "block" : "none";
+            document.getElementById("error-message").style.display = "none";
         }
         
         function showLoading(show) {
             document.getElementById("loading").style.display = show ? "block" : "none";
         }
+        
+        // Allow pressing Enter key to submit
+        document.getElementById("mobile").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                sendOTP();
+            }
+        });
+        
+        document.getElementById("otp").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                verifyOTP();
+            }
+        });
     </script>
 </body>
 </html>
