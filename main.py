@@ -147,7 +147,7 @@ async def login_or_register(mobile: str = Form(...)):
             session_id = f"session_{int(time.time())}_{random.randint(1000, 9999)}"
             user_sessions[session_id] = {"mobile": mobile, "verified": False}
             
-            response = JSONResponse({"message": f"OTP sent to {mobile}"})
+            response = JSONResponse({"message": f"OTP sent to {mobile} , "otp:" otp})
             response.set_cookie(key="session_id", value=session_id)
             return response
     except Exception as e:
