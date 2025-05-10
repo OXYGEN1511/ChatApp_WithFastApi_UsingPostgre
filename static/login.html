@@ -218,8 +218,8 @@
                     body: `mobile=${encodeURIComponent(mobile)}`
                 });
                 
-                const data = await res.json();
-                console.log("OTP:", data.otp)
+               const data = await res.json();
+                console.log("OTP:", data.otp);
                 if (res.ok) {
                     showSuccess(data.message || "OTP sent successfully");
                     document.getElementById("otp-section").style.display = "block";
