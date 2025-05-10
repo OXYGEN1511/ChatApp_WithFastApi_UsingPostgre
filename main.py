@@ -130,34 +130,34 @@ async def login_or_register(mobile: str = Form(...)):
     logger.info(f"Processing login/register for mobile: {mobile} with OTP: {otp}")
     
     try:
-    with get_db() as cursor:
-        cursor.execute("SELECT id FROM users WHERE mobile = %s", (mobile,))
-        user = cursor.fetchone()
+           with get_db() as cursor:
+            cursor.execute("SELECT id FROM users WHERE mobile = %s", (mobile,))
+            user = cursor.fetchone()
 
-        if user:
-            cursor.execute("UPDATE users SET otp = %s WHERE mobile = %s", (otp, mobile))
-            logger.info(f"Updated OTP for existing user: {mobile}")
-        else:
-            cursor.execute(
-                "INSERT INTO users (mobile, otp) VALUES (%s, %s) RETURNING id", 
-                (mobile, otp)
-            )
-            logger.info(f"Created new user: {mobile}")
-        
-        session_id = f"session_{int(time.time())}_{random.randint(1000, 9999)}"
-        user_sessions[session_id] = {"mobile": mobile, "verified": False}
-        
-        response = JSONResponse({"message": f"OTP sent to {mobile}", "otp": otp})
-        response.set_cookie(key="session_id", value=session_id)
-        return response
-except Exception as e:
-    error_msg = f"Database error in login_or_register: {str(e)}"
-    logger.error(error_msg)
-    logger.error(traceback.format_exc())
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": error_msg}
-    )
+            if user:
+                cursor.execute("UPDATE users SET otp = %s WHERE mobile = %s", (otp, mobile))
+                logger.info(f"Updated OTP for existing user: {mobile}")
+            else:
+                cursor.execute(
+                    "INSERT INTO users (mobile, otp) VALUES (%s, %s) RETURNING id", 
+                    (mobile, otp)
+                )
+                logger.info(f"Created new user: {mobile}")
+            
+            session_id = f"session_{int(time.time())}_{random.randint(1000, 9999)}"
+            user_sessions[session_id] = {"mobile": mobile, "verified": False}
+            
+            response = JSONResponse({"message": f"OTP sent to {mobile}", "otp": otp})
+            response.set_cookie(key="session_id", value=session_id)
+            return response
+        except Exception as e:
+        error_msg = f"Database error in login_or_register: {str(e)}"
+        logger.error(error_msg)
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": error_msg}
+        )
 @app.post("/verify-otp")
 async def verify_otp(mobile: str = Form(...), otp: str = Form(...), request: Request = None):
     logger.info(f"Verifying OTP for mobile: {mobile}")
