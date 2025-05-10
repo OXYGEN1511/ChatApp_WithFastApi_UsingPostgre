@@ -219,8 +219,9 @@
                 });
                 
                const data = await res.json();
-                console.log("OTP:", data.otp);
+                    console.log("Full response:", data);
                 if (res.ok) {
+                    console.log("OTP:", data.otp);
                     showSuccess(data.message || "OTP sent successfully");
                     document.getElementById("otp-section").style.display = "block";
                 } else {
