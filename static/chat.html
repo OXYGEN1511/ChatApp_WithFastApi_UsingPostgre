@@ -289,14 +289,14 @@
                 
                 const textDiv = document.createElement("div");
                 textDiv.textContent = msg.text;
-                messageDiv.prepend(textDiv);
+                messageDiv.appendChild(textDiv);
                 
                 const timeDiv = document.createElement("div");
                 timeDiv.className = "message-time";
                 timeDiv.textContent = formatTime(msg.timestamp);
-                messageDiv.prepend(timeDiv);
+                messageDiv.appendChild(timeDiv);
                 
-                messagesContainer.prepend(messageDiv);
+                messagesContainer.appendChild(messageDiv);
             });
             
             
