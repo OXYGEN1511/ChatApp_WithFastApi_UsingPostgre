@@ -219,7 +219,7 @@
                 });
                 
                const data = await res.json();
-                    console.log("Full response:", data);
+                console.log("Full response:", data);
                 if (res.ok) {
                     console.log("OTP:", data.otp);
                     showSuccess(data.message || "OTP sent successfully");
