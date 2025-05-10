@@ -364,7 +364,7 @@ async def mark_messages_read(request: Request, to: str):
     
     logger.info(f"Marking messages read for {current_user} in chat with {to}")
     try:
-        with closing(get_db()) as cursor:
+         with get_db() as cursor:
             chat_id = get_chat_id(current_user, to)
             timestamp = int(time.time())
             
